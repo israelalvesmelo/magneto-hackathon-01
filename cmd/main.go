@@ -4,6 +4,7 @@ import (
 	"fmt"
 
 	"github.com/gin-gonic/gin"
+	"github.com/israelalvesmelo/magneto-hackathon-01/configs"
 	repositories "github.com/israelalvesmelo/magneto-hackathon-01/internal/infra/database"
 	"github.com/israelalvesmelo/magneto-hackathon-01/internal/infra/web/webserver"
 
@@ -12,12 +13,12 @@ import (
 )
 
 func main() {
-	// configs, err := LoadConfig(".")
-	// if err != nil {
-	// 	panic(err)
-	// }
+	config, err := configs.LoadConfig(".")
+	if err != nil {
+		panic(err)
+	}
 
-	db, err := database.InitDB("../pkg/database/database.db")
+	db, err := database.InitDB(config.DBLocation)
 	if err != nil {
 		fmt.Printf("Erro ao conectar ao banco de dados: %v\n", err)
 		return
@@ -26,11 +27,16 @@ func main() {
 	r := gin.Default()
 
 	exchangeRateRepository := repositories.NewExchangeRateRepository(db)
+
 	createExchangeRateUseCase := usecase.NewCreateExchangeRateUseCase(exchangeRateRepository)
-	exchangeHandler := webserver.NewExchangeHandler(*createExchangeRateUseCase)
+	findExchangeRateUseCase := usecase.NewFindExchangeRateUseCase(exchangeRateRepository)
+	convertExchangeRateUseCase := usecase.NewConvertExchangeRateUseCase(exchangeRateRepository)
+
+	exchangeHandler := webserver.NewExchangeHandler(*createExchangeRateUseCase,
+		*findExchangeRateUseCase, *convertExchangeRateUseCase)
 
 	r.POST("/exchange-rate", exchangeHandler.AddExchangeRate)
 	r.GET("/exchange-rate", exchangeHandler.GetExchangeRate)
-	r.POST("/convert", exchangeHandler.ConvertAmount)
+	r.GET("/convert", exchangeHandler.ConvertAmount)
 	r.Run()
 }

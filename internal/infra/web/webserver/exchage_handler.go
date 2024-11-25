@@ -8,12 +8,19 @@ import (
 )
 
 type ExchangeHandler struct {
-	CreateExchangeRateUseCase usecase.CreateExchangeRateUseCase
+	CreateExchangeRateUseCase  usecase.CreateExchangeRateUseCase
+	FindExchangeRateUseCase    usecase.FindExchangeRateUseCase
+	ConvertExchangeRateUseCase usecase.ConvertExchangeRateUseCase
 }
 
-func NewExchangeHandler(createExchangeRateUseCase usecase.CreateExchangeRateUseCase) *ExchangeHandler {
+func NewExchangeHandler(createExchangeRateUseCase usecase.CreateExchangeRateUseCase,
+	findExchangeRateUseCase usecase.FindExchangeRateUseCase,
+	convertExchangeRateUseCase usecase.ConvertExchangeRateUseCase,
+) *ExchangeHandler {
 	return &ExchangeHandler{
-		CreateExchangeRateUseCase: createExchangeRateUseCase,
+		CreateExchangeRateUseCase:  createExchangeRateUseCase,
+		FindExchangeRateUseCase:    findExchangeRateUseCase,
+		ConvertExchangeRateUseCase: convertExchangeRateUseCase,
 	}
 }
 
@@ -33,7 +40,36 @@ func (h *ExchangeHandler) AddExchangeRate(c *gin.Context) {
 }
 
 func (h *ExchangeHandler) GetExchangeRate(c *gin.Context) {
+	var dto usecase.FindExchangeRateInput
+	dto.FromCurrency = c.Query("from_currency")
+	dto.ToCurrency = c.Query("to_currency")
+	if dto.FromCurrency == "" || dto.ToCurrency == "" {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "Parâmetros inválidos"})
+		return
+	}
+
+	rate, err := h.FindExchangeRateUseCase.Execute(dto)
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": err})
+		return
+	}
+	c.JSON(http.StatusOK, gin.H{"rate": rate})
 }
 
 func (h *ExchangeHandler) ConvertAmount(c *gin.Context) {
+	var dto usecase.ConvertExchangeRateInput
+	dto.FromCurrency = c.Query("from_currency")
+	dto.ToCurrency = c.Query("to_currency")
+	dto.Amount = c.GetFloat64("amount")
+	if dto.FromCurrency == "" || dto.ToCurrency == "" || dto.Amount == 0 {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "Parâmetros inválidos"})
+		return
+	}
+
+	result, err := h.ConvertExchangeRateUseCase.Execute(dto)
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": err})
+		return
+	}
+	c.JSON(http.StatusOK, gin.H{"converted_amount": result})
 }

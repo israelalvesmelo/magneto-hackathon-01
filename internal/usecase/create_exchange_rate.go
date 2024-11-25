@@ -3,9 +3,9 @@ package usecase
 import "github.com/israelalvesmelo/magneto-hackathon-01/internal/entity"
 
 type CreateExchangeRateInput struct {
-	FromCurrency string
-	ToCurrency   string
-	Rate         float64
+	FromCurrency string  `json:"from_currency"`
+	ToCurrency   string  `json:"to_currency"`
+	Rate         float64 `json:"rate"`
 }
 
 type CreateExchangeRateUseCase struct {
