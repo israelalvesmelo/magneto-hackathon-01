@@ -2,6 +2,7 @@ package webserver
 
 import (
 	"net/http"
+	"strconv"
 
 	"github.com/gin-gonic/gin"
 	"github.com/israelalvesmelo/magneto-hackathon-01/internal/usecase"
@@ -60,11 +61,12 @@ func (h *ExchangeHandler) ConvertAmount(c *gin.Context) {
 	var dto usecase.ConvertExchangeRateInput
 	dto.FromCurrency = c.Query("from_currency")
 	dto.ToCurrency = c.Query("to_currency")
-	dto.Amount = c.GetFloat64("amount")
-	if dto.FromCurrency == "" || dto.ToCurrency == "" || dto.Amount == 0 {
+	amount := c.Query("amount")
+	if dto.FromCurrency == "" || dto.ToCurrency == "" || amount == "" {
 		c.JSON(http.StatusBadRequest, gin.H{"error": "Parâmetros inválidos"})
 		return
 	}
+	dto.Amount, _ = strconv.ParseFloat(amount, 64)
 
 	result, err := h.ConvertExchangeRateUseCase.Execute(dto)
 	if err != nil {
