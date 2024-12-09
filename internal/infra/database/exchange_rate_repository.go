@@ -4,6 +4,9 @@ import (
 	"database/sql"
 	"errors"
 	"fmt"
+	"net/http"
+
+	"github.com/israelalvesmelo/magneto-hackathon-01/internal/entity"
 )
 
 type ExchangeRateRepository struct {
@@ -21,7 +24,8 @@ func (r *ExchangeRateRepository) AddExchangeRate(fromCurrency, toCurrency string
 	insertQuery := `INSERT INTO exchange_rates (from_currency, to_currency, rate) VALUES (?, ?, ?)`
 	_, err := r.db.Exec(insertQuery, fromCurrency, toCurrency, rate)
 	if err != nil {
-		return err
+		msgErr := "Erro ao adicionar taxa de câmbio"
+		return entity.NewExchangeError(http.StatusInternalServerError, msgErr, err)
 	}
 	fmt.Printf("Taxa de câmbio adicionada: %s -> %s = %.2f\n", fromCurrency, toCurrency, rate)
 	return nil
@@ -34,7 +38,8 @@ func (r *ExchangeRateRepository) GetExchangeRate(fromCurrency, toCurrency string
 	err := r.db.QueryRow(query, fromCurrency, toCurrency).Scan(&rate)
 	if err != nil {
 		if errors.Is(err, sql.ErrNoRows) {
-			return 0, errors.New("taxa de câmbio não encontrada")
+			msgErr := "Taxa de câmbio não encontrada"
+			return 0, entity.NewExchangeError(http.StatusNotFound, msgErr, err)
 		}
 		return 0, err
 	}

@@ -5,6 +5,7 @@ import (
 	"strconv"
 
 	"github.com/gin-gonic/gin"
+	"github.com/israelalvesmelo/magneto-hackathon-01/internal/entity"
 	"github.com/israelalvesmelo/magneto-hackathon-01/internal/usecase"
 )
 
@@ -28,16 +29,16 @@ func NewExchangeHandler(createExchangeRateUseCase usecase.CreateExchangeRateUseC
 func (h *ExchangeHandler) AddExchangeRate(c *gin.Context) {
 	var dto usecase.CreateExchangeRateInput
 	if err := c.ShouldBindJSON(&dto); err != nil {
-		c.JSON(400, gin.H{"error": err.Error()})
+		msgErr := "Erro ao converter JSON"
+		c.Error(entity.NewExchangeError(http.StatusBadRequest, msgErr, err))
 		return
 	}
 	err := h.CreateExchangeRateUseCase.Execute(dto)
 	if err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{"error": err})
+		c.Error(err)
 		return
 	}
 	c.JSON(http.StatusOK, gin.H{"message": "Taxa de câmbio adicionada com sucesso!"})
-
 }
 
 func (h *ExchangeHandler) GetExchangeRate(c *gin.Context) {
@@ -45,15 +46,17 @@ func (h *ExchangeHandler) GetExchangeRate(c *gin.Context) {
 	dto.FromCurrency = c.Query("from_currency")
 	dto.ToCurrency = c.Query("to_currency")
 	if dto.FromCurrency == "" || dto.ToCurrency == "" {
-		c.JSON(http.StatusBadRequest, gin.H{"error": "Parâmetros inválidos"})
+		msgErr := "Parâmetros inválidos"
+		c.Error(entity.NewExchangeError(http.StatusBadRequest, msgErr, nil))
 		return
 	}
 
 	rate, err := h.FindExchangeRateUseCase.Execute(dto)
 	if err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{"error": err})
+		c.Error(err)
 		return
 	}
+
 	c.JSON(http.StatusOK, gin.H{"rate": rate})
 }
 
@@ -63,15 +66,17 @@ func (h *ExchangeHandler) ConvertAmount(c *gin.Context) {
 	dto.ToCurrency = c.Query("to_currency")
 	amount := c.Query("amount")
 	if dto.FromCurrency == "" || dto.ToCurrency == "" || amount == "" {
-		c.JSON(http.StatusBadRequest, gin.H{"error": "Parâmetros inválidos"})
+		msgErr := "Parâmetros inválidos"
+		c.Error(entity.NewExchangeError(http.StatusBadRequest, msgErr, nil))
 		return
 	}
 	dto.Amount, _ = strconv.ParseFloat(amount, 64)
 
 	result, err := h.ConvertExchangeRateUseCase.Execute(dto)
 	if err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{"error": err})
+		c.Error(err)
 		return
 	}
+
 	c.JSON(http.StatusOK, gin.H{"converted_amount": result})
 }

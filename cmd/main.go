@@ -4,6 +4,7 @@ import (
 	"fmt"
 
 	"github.com/gin-gonic/gin"
+	"github.com/israelalvesmelo/magneto-hackathon-01/cmd/middleware"
 	"github.com/israelalvesmelo/magneto-hackathon-01/configs"
 	repositories "github.com/israelalvesmelo/magneto-hackathon-01/internal/infra/database"
 	"github.com/israelalvesmelo/magneto-hackathon-01/internal/infra/web/webserver"
@@ -25,7 +26,7 @@ func main() {
 	}
 
 	r := gin.Default()
-
+	r.Use(middleware.ErrorHandler)
 	exchangeRateRepository := repositories.NewExchangeRateRepository(db)
 
 	createExchangeRateUseCase := usecase.NewCreateExchangeRateUseCase(exchangeRateRepository)
@@ -38,5 +39,6 @@ func main() {
 	r.POST("/exchange-rate", exchangeHandler.AddExchangeRate)
 	r.GET("/exchange-rate", exchangeHandler.GetExchangeRate)
 	r.GET("/convert", exchangeHandler.ConvertAmount)
+
 	r.Run()
 }
